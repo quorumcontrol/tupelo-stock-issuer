@@ -1,0 +1,18 @@
+{
+  "name": "tupelo-stock-issuer",
+  "version": "0.0.1",
+  "description": "Tupelo demo app for issuing off-chain verified shares",
+  "main": "index.js",
+  "author": "Quorum Control",
+  "dependencies": {
+    "bloom-filters": "^0.5.2",
+    "tupelo-client": "^0.0.3-alpha1"
+  },
+  "devDependencies": {
+    "terser": "^3.16.1",
+    "parcel-bundler": "^1.11.0"
+  },
+  "scripts": {
+    "build": "validator/bin/build"
+  }
+}
