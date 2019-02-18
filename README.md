@@ -4,14 +4,14 @@ Demo app for issuing off-chain verified shares
 ## Install
 `npm install`
 
-Make sure tupelo rpc-server is running
+Make sure [tupelo rpc-server](https://docs.quorumcontrol.com/tutorials/rpc_server) is running
 
 ## Usage
 
 ### Generate new stock
 `node issue.js`
 
-This will print the company key and chain id for the stock, followed by all issued shares.
+This will print the company key address and chain id for the stock, followed by all issued shares.
 
 ### Revoke a share
 `node revoke.js {companyKeyAddr} {companyChainId} {shareChainIdToRevoke}`
