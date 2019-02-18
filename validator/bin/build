@@ -1,0 +1,9 @@
+#!/usr/bin/env node
+
+const {build} = require("../build.js")
+
+build().then((built) => {
+  console.log("Built " + built)
+}, (error) =>  {
+  throw error
+})
