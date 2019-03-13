@@ -5,8 +5,6 @@
 //
 // anything defined in a previous bundle is accessed via the
 // orig method which is the require for previous bundles
-
-// eslint-disable-next-line no-global-assign
 parcelRequire = (function (modules, cache, entry, globalName) {
   // Save the require from previous bundle to this closure if any
   var previousRequire = typeof parcelRequire === 'function' && parcelRequire;
@@ -77,8 +75,16 @@ parcelRequire = (function (modules, cache, entry, globalName) {
     }, {}];
   };
 
+  var error;
   for (var i = 0; i < entry.length; i++) {
-    newRequire(entry[i]);
+    try {
+      newRequire(entry[i]);
+    } catch (e) {
+      // Save first error but execute all entries
+      if (!error) {
+        error = e;
+      }
+    }
   }
 
   if (entry.length) {
@@ -103,6 +109,13 @@ parcelRequire = (function (modules, cache, entry, globalName) {
   }
 
   // Override the current require with this new one
+  parcelRequire = newRequire;
+
+  if (error) {
+    // throw error from earlier, _after updating parcelRequire_
+    throw error;
+  }
+
   return newRequire;
 })({"DG/7":[function(require,module,exports) {
 /* file : formulas.js
@@ -2343,6 +2356,8 @@ module.exports = {
 var _require = require('bloom-filters'),
     CuckooFilter = _require.CuckooFilter;
 
+var IPFS_API_HOST = '127.0.0.1';
+var IPFS_API_PORT = '5001';
 var requests = {};
 
 function Deferred() {
@@ -2371,32 +2386,51 @@ function requestMessage(msg) {
 }
 
 function validate(data) {
+  var id = data.chain.id;
+  var issuer = data.chain.tree.data.issuer;
   requestMessage({
-    type: "get-chain",
+    type: "get-tip",
     payload: {
-      chainId: data.chain.tree.issuer
+      chainId: issuer
     }
   }).then(function (resp) {
-    var id = data.chain.id;
-    var issuerChaintree = resp.payload.tree;
-    var issuedFilter = CuckooFilter.fromJSON(issuerChaintree.issued);
-    var revokedFilter = CuckooFilter.fromJSON(issuerChaintree.revoked);
+    dataUrl = "http://" + IPFS_API_HOST + ":" + IPFS_API_PORT + "/api/v0/dag/get?arg=" + resp.payload.tip + "/tree/data";
+    fetch(dataUrl + "/issued").then(function (resp) {
+      return resp.json();
+    }).then(function (issued) {
+      var issuedFilter = CuckooFilter.fromJSON(issued);
 
-    if (issuedFilter.has(id) && !revokedFilter.has(id)) {
-      window.parent.postMessage({
-        type: "finished",
-        payload: {
-          result: "ok"
-        }
-      });
-    } else {
-      window.parent.postMessage({
-        type: "finished",
-        payload: {
-          result: "invalid"
-        }
-      });
-    }
+      if (issuedFilter.has(id)) {
+        fetch(dataUrl + "/revoked").then(function (resp) {
+          return resp.json();
+        }).then(function (revoked) {
+          var revokedFilter = CuckooFilter.fromJSON(revoked);
+
+          if (!revokedFilter.has(id)) {
+            window.parent.postMessage({
+              type: "finished",
+              payload: {
+                result: "ok"
+              }
+            });
+          } else {
+            window.parent.postMessage({
+              type: "finished",
+              payload: {
+                result: "invalid"
+              }
+            });
+          }
+        });
+      } else {
+        window.parent.postMessage({
+          type: "finished",
+          payload: {
+            result: "invalid"
+          }
+        });
+      }
+    });
   });
 }
 
