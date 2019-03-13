@@ -1,5 +1,8 @@
 const { CuckooFilter } = require('bloom-filters')
 
+const IPFS_API_HOST = '127.0.0.1'
+const IPFS_API_PORT = '5001'
+
 let requests = {}
 
 function Deferred() {
@@ -26,16 +29,33 @@ function requestMessage(msg) {
 }
 
 function validate(data) {
-  requestMessage({type: "get-chain", payload: { chainId: data.chain.tree.issuer }}).then((resp) => {
-    const id = data.chain.id
-    const issuerChaintree = resp.payload.tree
-    const issuedFilter = CuckooFilter.fromJSON(issuerChaintree.issued)
-    const revokedFilter = CuckooFilter.fromJSON(issuerChaintree.revoked)
-    if (issuedFilter.has(id) && !revokedFilter.has(id)) {
-      window.parent.postMessage({type: "finished", payload: { result: "ok" }})
-    } else {
-      window.parent.postMessage({type: "finished", payload: { result: "invalid" }})
-    }
+  const id = data.chain.id
+  const issuer = data.chain.tree.data.issuer
+
+  requestMessage({type: "get-tip", payload: { chainId: issuer }}).then((resp) => {
+    dataUrl = "http://" + IPFS_API_HOST + ":" + IPFS_API_PORT + "/api/v0/dag/get?arg=" + resp.payload.tip + "/tree/data"
+
+    fetch(dataUrl + "/issued").then(function (resp) {
+      return resp.json();
+    }).then(function(issued) {
+      const issuedFilter = CuckooFilter.fromJSON(issued)
+
+      if (issuedFilter.has(id)) {
+        fetch(dataUrl + "/revoked").then(function (resp) {
+          return resp.json();
+        }).then(function(revoked) {
+          const revokedFilter = CuckooFilter.fromJSON(revoked)
+
+          if (!revokedFilter.has(id)) {
+            window.parent.postMessage({type: "finished", payload: { result: "ok" }})
+          } else {
+            window.parent.postMessage({type: "finished", payload: { result: "invalid" }})
+          }
+        })
+      } else {
+        window.parent.postMessage({type: "finished", payload: { result: "invalid" }})
+      }
+    })
   })
 }
 

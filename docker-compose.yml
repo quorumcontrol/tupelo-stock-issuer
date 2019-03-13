@@ -1,0 +1,36 @@
+version: "2"
+
+services:
+  ipfs:
+    image: ipfs/go-ipfs
+    entrypoint: su-exec ipfs /bin/sh -c
+    command: 
+      - | 
+          if [ ! -e "$$IPFS_PATH/config" ]; then \
+            ipfs init && \
+            ipfs config Addresses.API /ip4/0.0.0.0/tcp/5001 && \
+            ipfs config Addresses.Gateway /ip4/0.0.0.0/tcp/8080 && \
+            ipfs config --json API.HTTPHeaders.Access-Control-Allow-Origin '["*"]' && \
+            ipfs config --json API.HTTPHeaders.Access-Control-Allow-Methods '["PUT", "GET", "POST"]'; \
+          fi; \
+          ipfs daemon
+    ports:
+      - 5001:5001
+    networks:
+      default:
+        ipv4_address: 172.28.1.3
+
+  tupelo:
+    image: quorumcontrol/tupelo:master
+    command: ["rpc-server", "-l", "3", "--web"]
+    ports:
+      - 50050:50050
+      - 50051:50051
+
+networks:
+  default:
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.28.1.0/24
