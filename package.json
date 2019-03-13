@@ -6,11 +6,12 @@
   "author": "Quorum Control",
   "dependencies": {
     "bloom-filters": "^0.5.2",
-    "tupelo-client": "^0.0.3-alpha1"
+    "ipfs-http-client": "^29.1.1",
+    "tupelo-client": "quorumcontrol/tupelo.js#master"
   },
   "devDependencies": {
-    "terser": "^3.16.1",
-    "parcel-bundler": "^1.11.0"
+    "parcel-bundler": "^1.12.1",
+    "terser": "^3.16.1"
   },
   "scripts": {
     "build": "validator/bin/build"
