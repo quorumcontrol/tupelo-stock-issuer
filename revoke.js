@@ -4,11 +4,11 @@ const { CuckooFilter } = require('bloom-filters')
 
 const ERROR_CODE_NOT_FOUND = 6
 
-const client = tupelo.connect('localhost:50051', { walletName: 'stock-issuer-demo', passPhrase: 'insecure'})
+const companyWallet = tupelo.connect('localhost:50051', { walletName: 'stock-issuer-company', passPhrase: 'insecure'})
 
 const run = async () => {
   try {
-   await client.register()
+   await companyWallet.register()
   } catch (error) {
     if (error.code != ERROR_CODE_NOT_FOUND) {
       throw error
@@ -24,12 +24,12 @@ const run = async () => {
   const chainId = args[1]
   const toRevoke = args[2]
 
-  const resolvedRevoked = (await client.resolve(chainId, "revoked")).data[0]
+  const resolvedRevoked = (await companyWallet.resolveData(chainId, "revoked")).data[0]
   const resolvedRevokedFilter = CuckooFilter.fromJSON(resolvedRevoked)
 
   resolvedRevokedFilter.add(toRevoke)
 
-  await client.setData(chainId, keyAddr, "revoked", resolvedRevokedFilter.saveAsJSON())
+  await companyWallet.setData(chainId, keyAddr, "revoked", resolvedRevokedFilter.saveAsJSON())
 
   console.log("Revoked " + toRevoke + " on stock " + chainId)
 }
